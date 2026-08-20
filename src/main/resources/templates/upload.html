@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Upload Documents</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f5f7fa;
+    }
+
+    .header {
+      background-color: #2c3e50;
+      color: white;
+      padding: 20px 40px;
+    }
+
+    .header h1 {
+      margin: 0;
+    }
+
+    .upload-container {
+      width: 60%;
+      margin: 40px auto;
+      padding: 30px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .upload-container h2 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #fafafa;
+    }
+
+    .upload-button {
+      padding: 10px 18px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+
+    .upload-button:hover {
+      background-color: #219150;
+    }
+
+    .back-button {
+      display: inline-block;
+      padding: 10px 18px;
+      background-color: #3498db;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+
+    .back-button:hover {
+      background-color: #2980b9;
+    }
+
+    .info {
+      margin-top: 15px;
+      color: #666;
+      font-size: 14px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+<div class="header">
+  <h1>Upload Handwritten Documents</h1>
+</div>
+
+<div class="upload-container">
+
+  <h2>Select Documents</h2>
+
+  <form method="post"
+        th:action="@{/documents/upload}"
+        enctype="multipart/form-data">
+
+    <div class="form-group">
+
+      <label for="files">
+        Choose one or more PDF documents:
+      </label>
+
+      <input type="file"
+             id="files"
+             name="files"
+             accept=".pdf"
+             multiple
+             required>
+
+    </div>
+
+    <button type="submit"
+            class="upload-button">
+      Upload Documents
+    </button>
+
+    <a th:href="@{/documents}"
+       class="back-button">
+      Back to Documents
+    </a>
+
+  </form>
+
+  <p class="info">
+    Supported format: PDF. You can select one or multiple documents.
+  </p>
+
+</div>
+
+</body>
+
+</html>

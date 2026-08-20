@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Annotate Document</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f7fa;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 40px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px 0;
+        }
+
+        .header p {
+            margin: 0;
+        }
+
+        .toolbar {
+            background-color: white;
+            padding: 15px 40px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        button,
+        .back-button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .tool-button {
+            background-color: #8e44ad;
+            color: white;
+            margin-right: 10px;
+        }
+
+        .tool-button:hover {
+            background-color: #71368a;
+        }
+
+        .delete-button {
+            background-color: #e74c3c;
+        }
+
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+
+        .back-button {
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .page-navigation {
+            width: 90%;
+            margin: 20px auto 0;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .page-navigation button {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .page-navigation button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        #pageInfo {
+            font-weight: bold;
+        }
+
+        .pdf-container {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #dfe6e9;
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            overflow: auto;
+        }
+
+        .pdf-page {
+            position: relative;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        #pdfCanvas {
+            display: block;
+        }
+
+        #annotationLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .annotation-box {
+            position: absolute;
+            border: 2px solid red;
+            background-color: rgba(255, 0, 0, 0.12);
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        .annotation-box.selected {
+            border: 3px solid blue;
+            background-color: rgba(0, 0, 255, 0.12);
+        }
+
+        .annotation-letter {
+            position: absolute;
+            top: -25px;
+            left: -2px;
+            padding: 2px 6px;
+            background-color: red;
+            color: white;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        #drawingLayer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        #drawingLayer.active {
+            pointer-events: auto;
+            cursor: crosshair;
+        }
+
+        .drawing-box {
+            position: absolute;
+            border: 2px solid red;
+            background-color: rgba(255, 0, 0, 0.12);
+        }
+
+        .coordinates {
+            width: 90%;
+            margin: 20px auto;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+        }
+
+        .letter-section {
+            width: 90%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .letter-section h3 {
+            margin-top: 0;
+        }
+
+        .letter-input {
+            width: 150px;
+            padding: 10px;
+            font-size: 18px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .coordinate-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+
+        .coordinate-inputs div {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .coordinate-inputs input {
+            width: 110px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .save-button {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .save-button:hover {
+            background-color: #219150;
+        }
+
+        .annotations-list {
+            width: 90%;
+            margin: 20px auto 40px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+        }
+
+        .annotations-list h2 {
+            margin-top: 0;
+        }
+
+        .annotations-list table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .annotations-list th,
+        .annotations-list td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .annotations-list th {
+            background-color: #34495e;
+            color: white;
+        }
+
+        .annotations-list tr:hover {
+            background-color: #f2f2f2;
+        }
+
+        .annotation-table-button {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+        }
+
+        .annotation-table-button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="header">
+    <h1>Annotate Document</h1>
+    <p th:text="${document.name}">Document</p>
+</div>
+
+<div class="toolbar">
+
+    <button id="annotationTool"
+            class="tool-button">
+        Add Annotation
+    </button>
+
+    <button id="deleteButton"
+            class="tool-button delete-button"
+            style="display: none;">
+        Delete Annotation
+    </button>
+
+    <a href="/documents"
+       class="back-button">
+        ← Back to Documents
+    </a>
+
+</div>
+
+<div class="page-navigation">
+
+    <button id="previousPage">
+        ← Previous
+    </button>
+
+    <span id="pageInfo">
+        Page 1 of 1
+    </span>
+
+    <button id="nextPage">
+        Next →
+    </button>
+
+</div>
+
+<div class="pdf-container">
+
+    <div id="pdfPage"
+         class="pdf-page">
+
+        <canvas id="pdfCanvas"></canvas>
+
+        <div id="annotationLayer"></div>
+
+        <div id="drawingLayer"></div>
+
+    </div>
+
+</div>
+
+<div class="coordinates">
+
+    <strong>Coordinates:</strong>
+
+    <p id="coordinateText">
+        No annotation selected.
+    </p>
+
+</div>
+
+<div id="letterSection"
+     class="letter-section">
+
+    <h3 id="annotationFormTitle">
+        Add Annotation
+    </h3>
+
+    <label for="letterInput">
+        Printed Letter:
+    </label>
+
+    <br><br>
+
+    <input id="letterInput"
+           class="letter-input"
+           type="text"
+           maxlength="1"
+           placeholder="Enter letter">
+
+    <div class="coordinate-inputs">
+
+        <div>
+            <label for="xInput">X:</label>
+            <input id="xInput"
+                   type="number"
+                   step="0.01">
+        </div>
+
+        <div>
+            <label for="yInput">Y:</label>
+            <input id="yInput"
+                   type="number"
+                   step="0.01">
+        </div>
+
+        <div>
+            <label for="widthInput">Width:</label>
+            <input id="widthInput"
+                   type="number"
+                   step="0.01">
+        </div>
+
+        <div>
+            <label for="heightInput">Height:</label>
+            <input id="heightInput"
+                   type="number"
+                   step="0.01">
+        </div>
+
+        <div>
+            <label for="pageNumberInput">Page:</label>
+            <input id="pageNumberInput"
+                   type="number"
+                   min="1">
+        </div>
+
+    </div>
+
+    <button id="saveButton"
+            class="save-button">
+        Save Annotation
+    </button>
+
+</div>
+
+<div class="annotations-list">
+
+    <h2>Annotations</h2>
+
+    <table>
+
+        <thead>
+        <tr>
+            <th>Printed Letter</th>
+            <th>X</th>
+            <th>Y</th>
+            <th>Width</th>
+            <th>Height</th>
+            <th>Page</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+
+        <tbody id="annotationsTableBody"></tbody>
+
+    </table>
+
+</div>
+
+<script type="module">
+
+    import {
+        getDocument,
+        GlobalWorkerOptions
+    } from "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+
+    GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+
+
+    const pdfCanvas =
+        document.getElementById("pdfCanvas");
+
+    const pdfContext =
+        pdfCanvas.getContext("2d");
+
+    const pdfPage =
+        document.getElementById("pdfPage");
+
+    const annotationLayer =
+        document.getElementById("annotationLayer");
+
+    const drawingLayer =
+        document.getElementById("drawingLayer");
+
+    const previousPageButton =
+        document.getElementById("previousPage");
+
+    const nextPageButton =
+        document.getElementById("nextPage");
+
+    const pageInfo =
+        document.getElementById("pageInfo");
+
+    const annotationTool =
+        document.getElementById("annotationTool");
+
+    const deleteButton =
+        document.getElementById("deleteButton");
+
+    const coordinateText =
+        document.getElementById("coordinateText");
+
+    const letterSection =
+        document.getElementById("letterSection");
+
+    const annotationFormTitle =
+        document.getElementById("annotationFormTitle");
+
+    const letterInput =
+        document.getElementById("letterInput");
+
+    const xInput =
+        document.getElementById("xInput");
+
+    const yInput =
+        document.getElementById("yInput");
+
+    const widthInput =
+        document.getElementById("widthInput");
+
+    const heightInput =
+        document.getElementById("heightInput");
+
+    const pageNumberInput =
+        document.getElementById("pageNumberInput");
+
+    const saveButton =
+        document.getElementById("saveButton");
+
+    const annotationsTableBody =
+        document.getElementById("annotationsTableBody");
+
+
+    const documentId =
+        [[${document.id}]];
+
+    const pdfUrl =
+        "/documents/" + documentId + "/view";
+
+
+    let pdfDocument = null;
+
+    let currentPage = 1;
+    let totalPages = 1;
+
+    const scale = 1.3;
+
+    let annotations = [];
+
+    let drawing = false;
+
+    let startX = 0;
+    let startY = 0;
+
+    let drawingBox = null;
+
+    let editMode = false;
+    let selectedAnnotationId = null;
+
+
+    async function loadPDF() {
+
+        try {
+
+            pdfDocument =
+                await getDocument(pdfUrl).promise;
+
+            totalPages =
+                pdfDocument.numPages;
+
+            updatePageInfo();
+
+            await renderPage(currentPage);
+
+        } catch (error) {
+
+            console.error(
+                "PDF loading error:",
+                error
+            );
+
+            alert(
+                "Error while loading PDF."
+            );
+        }
+    }
+
+
+    async function renderPage(pageNumber) {
+
+        drawingLayer.innerHTML = "";
+        drawingBox = null;
+
+        const page =
+            await pdfDocument.getPage(pageNumber);
+
+        const viewport =
+            page.getViewport({
+                scale: scale
+            });
+
+        pdfCanvas.width =
+            viewport.width;
+
+        pdfCanvas.height =
+            viewport.height;
+
+        pdfPage.style.width =
+            viewport.width + "px";
+
+        pdfPage.style.height =
+            viewport.height + "px";
+
+        annotationLayer.style.width =
+            viewport.width + "px";
+
+        annotationLayer.style.height =
+            viewport.height + "px";
+
+        drawingLayer.style.width =
+            viewport.width + "px";
+
+        drawingLayer.style.height =
+            viewport.height + "px";
+
+        await page.render({
+            canvasContext: pdfContext,
+            viewport: viewport
+        }).promise;
+
+        renderAnnotations();
+    }
+
+
+    function updatePageInfo() {
+
+        pageInfo.textContent =
+            "Page "
+            + currentPage
+            + " of "
+            + totalPages;
+
+        previousPageButton.disabled =
+            currentPage <= 1;
+
+        nextPageButton.disabled =
+            currentPage >= totalPages;
+    }
+
+
+    previousPageButton.addEventListener(
+        "click",
+        async function () {
+
+            if (currentPage <= 1) {
+                return;
+            }
+
+            currentPage--;
+
+            updatePageInfo();
+
+            clearSelection();
+
+            await renderPage(currentPage);
+        }
+    );
+
+
+    nextPageButton.addEventListener(
+        "click",
+        async function () {
+
+            if (currentPage >= totalPages) {
+                return;
+            }
+
+            currentPage++;
+
+            updatePageInfo();
+
+            clearSelection();
+
+            await renderPage(currentPage);
+        }
+    );
+
+
+    async function loadAnnotations() {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/documents/"
+                    + documentId
+                    + "/annotations"
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    "Could not load annotations."
+                );
+            }
+
+            annotations =
+                await response.json();
+
+            renderAnnotations();
+
+        } catch (error) {
+
+            console.error(
+                "Loading annotations error:",
+                error
+            );
+        }
+    }
+
+
+    function renderAnnotations() {
+
+        annotationLayer.innerHTML = "";
+
+        const pageAnnotations =
+            annotations.filter(
+                annotation =>
+                    Number(annotation.pageNumber)
+                    === currentPage
+            );
+
+        pageAnnotations.forEach(
+            annotation =>
+                createAnnotationBox(annotation)
+        );
+
+        renderAnnotationsTable();
+    }
+
+
+    function createAnnotationBox(annotation) {
+
+        const box =
+            document.createElement("div");
+
+        box.classList.add(
+            "annotation-box"
+        );
+
+        box.style.left =
+            annotation.x + "px";
+
+        box.style.top =
+            annotation.y + "px";
+
+        box.style.width =
+            annotation.width + "px";
+
+        box.style.height =
+            annotation.height + "px";
+
+        box.dataset.annotationId =
+            annotation.id;
+
+
+        const letter =
+            document.createElement("div");
+
+        letter.classList.add(
+            "annotation-letter"
+        );
+
+        letter.textContent =
+            annotation.letter;
+
+        box.appendChild(letter);
+
+
+        box.addEventListener(
+            "click",
+            function (event) {
+
+                event.stopPropagation();
+
+                selectAnnotation(
+                    annotation,
+                    box
+                );
+            }
+        );
+
+        annotationLayer.appendChild(box);
+    }
+
+
+    function selectAnnotation(annotation, box) {
+
+        document
+            .querySelectorAll(".annotation-box")
+            .forEach(
+                element =>
+                    element.classList.remove(
+                        "selected"
+                    )
+            );
+
+        box.classList.add("selected");
+
+        selectedAnnotationId =
+            annotation.id;
+
+        editMode = true;
+
+        annotationFormTitle.textContent =
+            "Edit Annotation";
+
+        saveButton.textContent =
+            "Save Changes";
+
+        deleteButton.style.display =
+            "inline-block";
+
+        letterSection.style.display =
+            "block";
+
+        letterInput.value =
+            annotation.letter;
+
+        xInput.value =
+            annotation.x;
+
+        yInput.value =
+            annotation.y;
+
+        widthInput.value =
+            annotation.width;
+
+        heightInput.value =
+            annotation.height;
+
+        pageNumberInput.value =
+            annotation.pageNumber;
+
+
+        const endX =
+            Number(annotation.x)
+            + Number(annotation.width);
+
+        const endY =
+            Number(annotation.y)
+            + Number(annotation.height);
+
+
+        coordinateText.textContent =
+            "Start: ("
+            + Number(annotation.x).toFixed(2)
+            + ", "
+            + Number(annotation.y).toFixed(2)
+            + "), End: ("
+            + endX.toFixed(2)
+            + ", "
+            + endY.toFixed(2)
+            + "), Printed Letter: "
+            + annotation.letter
+            + ", Page: "
+            + annotation.pageNumber;
+    }
+
+
+    annotationTool.addEventListener(
+        "click",
+        function () {
+
+            drawing = !drawing;
+
+            if (drawing) {
+
+                clearSelection();
+
+                drawingLayer.classList.add(
+                    "active"
+                );
+
+                annotationTool.textContent =
+                    "Cancel Drawing";
+
+            } else {
+
+                drawingLayer.classList.remove(
+                    "active"
+                );
+
+                annotationTool.textContent =
+                    "Add Annotation";
+            }
+        }
+    );
+
+
+    drawingLayer.addEventListener(
+        "pointerdown",
+        function (event) {
+
+            if (!drawing) {
+                return;
+            }
+
+            event.preventDefault();
+
+            const rect =
+                drawingLayer.getBoundingClientRect();
+
+            startX =
+                event.clientX - rect.left;
+
+            startY =
+                event.clientY - rect.top;
+
+            drawingBox =
+                document.createElement("div");
+
+            drawingBox.classList.add(
+                "drawing-box"
+            );
+
+            drawingBox.style.left =
+                startX + "px";
+
+            drawingBox.style.top =
+                startY + "px";
+
+            drawingBox.style.width =
+                "0px";
+
+            drawingBox.style.height =
+                "0px";
+
+            drawingLayer.appendChild(
+                drawingBox
+            );
+
+            drawingLayer.setPointerCapture(
+                event.pointerId
+            );
+        }
+    );
+
+
+    drawingLayer.addEventListener(
+        "pointermove",
+        function (event) {
+
+            if (!drawing || !drawingBox) {
+                return;
+            }
+
+            const rect =
+                drawingLayer.getBoundingClientRect();
+
+            const currentX =
+                event.clientX - rect.left;
+
+            const currentY =
+                event.clientY - rect.top;
+
+            drawingBox.style.left =
+                Math.min(
+                    startX,
+                    currentX
+                ) + "px";
+
+            drawingBox.style.top =
+                Math.min(
+                    startY,
+                    currentY
+                ) + "px";
+
+            drawingBox.style.width =
+                Math.abs(
+                    currentX - startX
+                ) + "px";
+
+            drawingBox.style.height =
+                Math.abs(
+                    currentY - startY
+                ) + "px";
+        }
+    );
+
+
+    drawingLayer.addEventListener(
+        "pointerup",
+        function (event) {
+
+            if (!drawing || !drawingBox) {
+                return;
+            }
+
+            const rect =
+                drawingLayer.getBoundingClientRect();
+
+            const endX =
+                event.clientX - rect.left;
+
+            const endY =
+                event.clientY - rect.top;
+
+            const x =
+                Math.min(
+                    startX,
+                    endX
+                );
+
+            const y =
+                Math.min(
+                    startY,
+                    endY
+                );
+
+            const width =
+                Math.abs(
+                    endX - startX
+                );
+
+            const height =
+                Math.abs(
+                    endY - startY
+                );
+
+
+            xInput.value =
+                x.toFixed(2);
+
+            yInput.value =
+                y.toFixed(2);
+
+            widthInput.value =
+                width.toFixed(2);
+
+            heightInput.value =
+                height.toFixed(2);
+
+            pageNumberInput.value =
+                currentPage;
+
+
+            coordinateText.textContent =
+                "Start: ("
+                + x.toFixed(2)
+                + ", "
+                + y.toFixed(2)
+                + "), End: ("
+                + (x + width).toFixed(2)
+                + ", "
+                + (y + height).toFixed(2)
+                + "), Page: "
+                + currentPage;
+
+
+            letterSection.style.display =
+                "block";
+
+            annotationFormTitle.textContent =
+                "Add Annotation";
+
+            saveButton.textContent =
+                "Save Annotation";
+
+            letterInput.value = "";
+
+            letterInput.focus();
+
+
+            drawing = false;
+
+            drawingLayer.classList.remove(
+                "active"
+            );
+
+            annotationTool.textContent =
+                "Add Annotation";
+
+
+            if (drawingBox) {
+                drawingBox.remove();
+                drawingBox = null;
+            }
+        }
+    );
+
+
+    saveButton.addEventListener(
+        "click",
+        async function () {
+
+            const letter =
+                letterInput.value.trim();
+
+            const x =
+                Number(xInput.value);
+
+            const y =
+                Number(yInput.value);
+
+            const width =
+                Number(widthInput.value);
+
+            const height =
+                Number(heightInput.value);
+
+            const pageNumber =
+                Number(pageNumberInput.value);
+
+
+            if (letter === "") {
+
+                alert(
+                    "Please enter the printed letter."
+                );
+
+                return;
+            }
+
+
+            if (letter.length !== 1) {
+
+                alert(
+                    "Please enter only one letter."
+                );
+
+                return;
+            }
+
+
+            if (
+                !Number.isFinite(x) ||
+                !Number.isFinite(y) ||
+                !Number.isFinite(width) ||
+                !Number.isFinite(height)
+            ) {
+
+                alert(
+                    "Invalid coordinates."
+                );
+
+                return;
+            }
+
+
+            if (width <= 0 || height <= 0) {
+
+                alert(
+                    "Width and height must be greater than 0."
+                );
+
+                return;
+            }
+
+
+            if (
+                pageNumber < 1 ||
+                pageNumber > totalPages
+            ) {
+
+                alert(
+                    "Invalid page number."
+                );
+
+                return;
+            }
+
+
+            const formData =
+                new FormData();
+
+            formData.append(
+                "letter",
+                letter
+            );
+
+            formData.append(
+                "x",
+                x
+            );
+
+            formData.append(
+                "y",
+                y
+            );
+
+            formData.append(
+                "width",
+                width
+            );
+
+            formData.append(
+                "height",
+                height
+            );
+
+            formData.append(
+                "pageNumber",
+                pageNumber
+            );
+
+
+            try {
+
+                let url;
+
+                if (
+                    editMode &&
+                    selectedAnnotationId !== null
+                ) {
+
+                    url =
+                        "/annotations/"
+                        + selectedAnnotationId
+                        + "/update";
+
+                } else {
+
+                    url =
+                        "/documents/"
+                        + documentId
+                        + "/annotations";
+                }
+
+
+                const response =
+                    await fetch(
+                        url,
+                        {
+                            method: "POST",
+                            body: formData
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    const message =
+                        await response.text();
+
+                    throw new Error(message);
+                }
+
+
+                await loadAnnotations();
+
+                const wasEditMode =
+                    editMode;
+
+                clearSelection();
+
+                alert(
+                    wasEditMode
+                        ? "Annotation updated successfully."
+                        : "Annotation saved successfully."
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Saving annotation error:",
+                    error
+                );
+
+                alert(
+                    "Error while saving annotation."
+                );
+            }
+        }
+    );
+
+
+    deleteButton.addEventListener(
+        "click",
+        async function () {
+
+            if (selectedAnnotationId === null) {
+                return;
+            }
+
+            const confirmed =
+                confirm(
+                    "Are you sure you want to delete this annotation?"
+                );
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        "/annotations/"
+                        + selectedAnnotationId
+                        + "/delete",
+                        {
+                            method: "POST"
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        "Delete failed."
+                    );
+                }
+
+
+                await loadAnnotations();
+
+                clearSelection();
+
+            } catch (error) {
+
+                console.error(
+                    "Deleting annotation error:",
+                    error
+                );
+
+                alert(
+                    "Error while deleting annotation."
+                );
+            }
+        }
+    );
+
+
+    function clearSelection() {
+
+        selectedAnnotationId = null;
+
+        editMode = false;
+
+        deleteButton.style.display =
+            "none";
+
+        letterSection.style.display =
+            "none";
+
+        document
+            .querySelectorAll(".annotation-box")
+            .forEach(
+                element =>
+                    element.classList.remove(
+                        "selected"
+                    )
+            );
+
+        coordinateText.textContent =
+            "No annotation selected.";
+    }
+
+
+    function renderAnnotationsTable() {
+
+        annotationsTableBody.innerHTML = "";
+
+        if (annotations.length === 0) {
+
+            const row =
+                document.createElement("tr");
+
+            row.innerHTML = `
+                <td colspan="7">
+                    No annotations available.
+                </td>
+            `;
+
+            annotationsTableBody.appendChild(
+                row
+            );
+
+            return;
+        }
+
+
+        annotations.forEach(
+            function (annotation) {
+
+                const row =
+                    document.createElement("tr");
+
+                row.innerHTML = `
+                    <td>
+                        ${escapeHtml(annotation.letter)}
+                    </td>
+
+                    <td>
+                        ${Number(annotation.x).toFixed(2)}
+                    </td>
+
+                    <td>
+                        ${Number(annotation.y).toFixed(2)}
+                    </td>
+
+                    <td>
+                        ${Number(annotation.width).toFixed(2)}
+                    </td>
+
+                    <td>
+                        ${Number(annotation.height).toFixed(2)}
+                    </td>
+
+                    <td>
+                        ${annotation.pageNumber}
+                    </td>
+
+                    <td>
+                        <button class="annotation-table-button">
+                            Edit
+                        </button>
+                    </td>
+                `;
+
+
+                const editButton =
+                    row.querySelector(
+                        ".annotation-table-button"
+                    );
+
+                editButton.addEventListener(
+                    "click",
+                    function () {
+
+                        goToAnnotation(
+                            annotation
+                        );
+                    }
+                );
+
+
+                annotationsTableBody.appendChild(
+                    row
+                );
+            }
+        );
+    }
+
+
+    async function goToAnnotation(annotation) {
+
+        currentPage =
+            Number(
+                annotation.pageNumber
+            );
+
+        updatePageInfo();
+
+        clearSelection();
+
+        await renderPage(
+            currentPage
+        );
+
+
+        const box =
+            document.querySelector(
+                '[data-annotation-id="'
+                + annotation.id
+                + '"]'
+            );
+
+
+        if (box) {
+
+            selectAnnotation(
+                annotation,
+                box
+            );
+        }
+    }
+
+
+    function escapeHtml(text) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent =
+            text ?? "";
+
+        return div.innerHTML;
+    }
+
+
+    await loadPDF();
+
+    await loadAnnotations();
+
+</script>
+
+</body>
+</html>
