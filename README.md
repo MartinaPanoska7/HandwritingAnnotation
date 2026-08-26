@@ -114,16 +114,6 @@ Repository класите го користат `JpaRepository`, кој овоз
 
 Тоа значи дека повеќе анотации можат да припаѓаат на еден документ.
 
-Пример:
-
-```text id="eggn1v"
-Document: primer.pdf
-│
-├── Annotation 1 → "A"
-├── Annotation 2 → "B"
-├── Annotation 3 → "C"
-└── Annotation 4 → "A"
-```
 
 ---
 
